@@ -12,67 +12,99 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primaryColor: Colors.white,
       ),
-      home: MyCustomHomePage(title :'Random words'),
+      home: RamdomWords(title: 'Random words'),
     );
   }
 }
- class MyCustomHomePage extends StatelessWidget {
+
+class RamdomWords extends StatefulWidget {
   final String title;
-  MyCustomHomePage({this.title}) : super();
+
+  RamdomWords({Key key, this.title}) : super(key: key);
+  @override
+  _RamdomWordsState createState() => _RamdomWordsState();
+}
+
+class _RamdomWordsState extends State<RamdomWords> {
+  final _suggestions = <WordPair>[];
+  final _biggerFont = TextStyle(fontSize: 18.0);
+  final _saved = Set<WordPair>();
+
+  void _pushSaved() {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (BuildContext context) {
+          final tiles = _saved.map((WordPair pair) => ListTile(
+            title: Text(pair.asPascalCase, style: _biggerFont,),
+          ));
+          final devided = ListTile.divideTiles(
+            context: context,
+            tiles: tiles
+          ).toList();
+          return Scaffold(
+            appBar: AppBar(
+              title: Text("Saved Suggestions"),
+            ),
+            body: ListView(children: devided,),
+          );
+        }
+      )
+    );
+  }
+
+  Widget _buildSuggestion() {
+    return ListView.builder(
+      padding: EdgeInsets.all(16.0),
+      itemBuilder: (context, i) {
+        if (i.isOdd) return Divider();
+        final index = i ~/ 2;
+
+        if (index >= _suggestions.length) {
+          _suggestions.addAll(generateWordPairs().take(10));
+        }
+        return _buildRow(_suggestions[index]);
+      },
+    );
+  }
+
+  Widget _buildRow(WordPair pair) {
+    final alreadySaved = _saved.contains(pair);
+    return ListTile(
+      title: Text(
+        pair.asPascalCase,
+        style: _biggerFont,
+      ),
+      trailing: Icon(
+        alreadySaved ? Icons.favorite : Icons.favorite_border,
+        color: alreadySaved ? Colors.red : null,
+      ),
+      onTap: () {
+        setState(() {
+          if(alreadySaved) {
+            _saved.remove(pair);
+          } else {
+            _saved.add(pair);
+          }
+        });
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final wordPair = WordPair.random();
     return Scaffold(
       appBar: AppBar(
-        title: Text(this.title),
+        title: Text(widget.title),
+        actions: [
+          IconButton(icon: Icon(Icons.list),onPressed: _pushSaved,)
+        ],
       ),
-      body: Center(
-        child: RamdomWords(),
-      ),
+      body: _buildSuggestion(),
     );
   }
- }
-
-
- class RamdomWords extends StatefulWidget {
-   @override
-   _RamdomWordsState createState() => _RamdomWordsState();
- }
-
- class _RamdomWordsState extends State<RamdomWords> {
-   final _suggestions = <WordPair>[];
-   final _biggerFont = TextStyle(fontSize: 18.0);
-  
-   Widget _buildSuggestion() {
-     return ListView.builder(
-       padding: EdgeInsets.all(16.0),
-       itemBuilder: (context, i) {
-         if(i.isOdd) return Divider();
-         final index = i~/2;
-
-         if(index >= _suggestions.length) {
-           _suggestions.addAll(generateWordPairs().take(10));
-         }
-         return _buildRow(_suggestions[index]);
-       },
-     );
-   }
-   Widget _buildRow(WordPair pair) {
-     return ListTile(
-        title: Text(pair.asPascalCase, style: _biggerFont,),
-     );
-   }
-
-   @override
-   Widget build(BuildContext context) {
-     return _buildSuggestion();
-   }
- }
-
-
+}
 
 class MyHomePage extends StatefulWidget {
   MyHomePage({Key key, this.title}) : super(key: key);
